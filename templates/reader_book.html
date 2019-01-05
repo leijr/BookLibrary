@@ -13,20 +13,18 @@
 	  <strong>Errror : </strong> {{error}}
 	</div>
 	{% endif %}
-	<h2> 书目信息 </h2>
+	<h2> 资产信息 </h2>
 	{% if book %}
-	<li> ISBN            	{{book.book_id}} </li>
-	<li> 书名        		{{book.book_name}} </li>
-	<li> 作者        		{{book.author}} </li>	
-	<li> 出版社     	{{book.publish_com}} </li>
-	<li> 出版日期   	{{book.publish_date}} </li>
+	<li> 资产编号           	{{book.asset_id}} </li>
+	<li> 资产名        		{{book.asset_name}} </li>
+	<li> 资产类型        		{{book.usage}} </li>	
 	{% endif %}
 	<div >
-	  <h2 > 借阅信息 </h2>
+	  <h2 > 借用信息 </h2>
 	  {% if reader  %}
-	  <li> 借阅者姓名 {{reader.user_name}}</li>
-	  <li> 借阅日期  {{reader.date_borrow}}</li>
-	  <li> 还书日期  {{reader.date_return}}</li>
+	  <li> 借用者姓名 {{reader.user_name}}</li>
+	  <li> 借用日期  {{reader.date_borrow}}</li>
+	  <li> 归还日期  {{reader.date_return}}</li>
 	  {% else %}
 	  <li> 无 </li>
 	  {% endif %}

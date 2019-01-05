@@ -13,7 +13,7 @@ DATABASE = 'book.db'
 DEBUG = True
 SECRET_KEY = 'development key'
 MANAGER_NAME = 'admin'
-MANAGER_PWD = '123456'
+MANAGER_PWD = 'admin'
 
 app = Flask(__name__)
 
@@ -107,10 +107,9 @@ def register():
 			error = 'The username is already taken'
 		else:
 			db = get_db()
-			db.execute('''insert into users (user_name, pwd, college, num, email) \
-				values (?, ?, ?, ?, ?) ''', [request.form['username'], generate_password_hash(
-				request.form['password']), request.form['college'], request.form['number'],
-								 request.form['email']])
+			db.execute('''insert into users (user_name, pwd, department, num) \
+				values (?, ?, ?, ?) ''', [request.form['username'], generate_password_hash(
+				request.form['password']), request.form['department'], request.form['number']])
 			db.commit()
 			return redirect(url_for('reader_login'))
 	return render_template('register.html', error = error)
@@ -136,7 +135,7 @@ def reader_judge():
 def manager_books():
 	manager_judge()
 	return render_template('manager_books.html',
-			books = query_db('select * from books', []))
+			books = query_db('select * from assets', []))
 
 @app.route('/manager')
 def manager():
@@ -196,21 +195,15 @@ def manager_books_add():
 	error = None
 	if request.method == 'POST':
 		if not request.form['id']:
-			error = 'You have to input the book ISBN'
+			error = 'You have to input the asset ISBN'
 		elif not request.form['name']:
-			error = 'You have to input the book name'
-		elif not request.form['author']:
-			error = 'You have to input the book author'
-		elif not request.form['company']:
-			error = 'You have to input the publish company'
-		elif not request.form['date']:
-			error = 'You have to input the publish date'
+			error = 'You have to input the asset name'
+		elif not request.form['usage']:
+			error = 'You have to input the asset usage'
 		else:
 			db = get_db()
-			db.execute('''insert into books (book_id, book_name, author, publish_com,
-				publish_date) values (?, ?, ?, ?, ?) ''', [request.form['id'],
-					request.form['name'], request.form['author'], request.form['company'],
-				request.form['date']])
+			db.execute('''insert into assets (asset_id, asset_name, usage) values (?, ?, ?) ''', [request.form['id'],
+					request.form['name'], request.form['usage']])
 			db.commit()
 			return redirect(url_for('manager_books'))
 	return render_template('manager_books_add.html', error = error)
@@ -223,13 +216,13 @@ def manager_books_delete():
 		if not request.form['id']:
 			error = 'You have to input the book name'
 		else:
-			book = query_db('''select * from books where book_id = ?''',
+			book = query_db('''select * from assets where asset_id = ?''',
 				[request.form['id']], one=True)
 			if book is None:
 				error = 'Invalid book id'
 			else:
 				db = get_db()
-				db.execute('''delete from books where book_id=? ''', [request.form['id']])
+				db.execute('''delete from assets where asset_id=? ''', [request.form['id']])
 				db.commit()
 				return redirect(url_for('manager_books'))
 	return render_template('manager_books_delete.html', error = error)
@@ -237,20 +230,20 @@ def manager_books_delete():
 @app.route('/manager/book/<id>', methods=['GET', 'POST'])
 def manager_book(id):
 	manager_judge()
-	book = query_db('''select * from books where book_id = ?''', [id], one=True)
-	reader = query_db('''select * from borrows where book_id = ?''', [id], one=True)
-	name = query_db('''select user_name from borrows where book_id = ?''', [id], one=True)
+	book = query_db('''select * from assets where asset_id = ?''', [id], one=True)
+	reader = query_db('''select * from borrows where asset_id = ?''', [id], one=True)
+	name = query_db('''select user_name from borrows where asset_id = ?''', [id], one=True)
 
 	current_time = time.strftime('%Y-%m-%d',time.localtime(time.time()))
 	if request.method == 'POST':
 		db = get_db()
-		db.execute('''update histroys set status = ?, date_return = ?  where book_id=?
+		db.execute('''update histroys set status = ?, date_return = ?  where asset_id=?
 			and user_name=? and status=? ''',
 			   ['retruned', current_time, id, name[0], 'not return'])
-		db.execute('''delete from borrows where book_id = ? ''' , [id])
+		db.execute('''delete from borrows where asset_id = ? ''' , [id])
 		db.commit()
 		return redirect(url_for('manager_book', id = id))
-	   	return render_template('manager_book.html', book = book, reader = reader)
+	return render_template('manager_book.html', book = book, reader = reader)
 
 @app.route('/manager/user/<id>', methods=['GET', 'POST'])
 def manager_user(id):
@@ -326,61 +319,61 @@ def reader_query():
 	if request.method == 'POST':
 		if request.form['item'] == 'name':
 			if not request.form['query']:
-				error = 'You have to input the book name'
+				error = 'You have to input the asset name'
 			else:
-				books = query_db('''select * from books where book_name = ?''',
+				books = query_db('''select * from assets where asset_name = ?''',
 						[request.form['query']])
 				if not books:
-					error = 'Invalid book name'
+					error = 'Invalid asset name'
 		else:
 			if not request.form['query']:
-				error = 'You have to input the book author'
+				error = 'You have to input the asset name'
 			else:
-				books = query_db('''select * from books where author = ?''',
+				books = query_db('''select * from assets where asset_id = ?''',
 						[request.form['query']])
 				if not books:
-					error = 'Invalid book author'
+					error = 'Invalid asset id'
 	return render_template('reader_query.html', books = books, error = error)
 
 @app.route('/reader/book/<id>', methods=['GET', 'POST'])
 def reader_book(id):
 	reader_judge()
 	error = None
-	book = query_db('''select * from books where book_id = ?''', [id], one=True)
-	reader = query_db('''select * from borrows where book_id = ?''', [id], one=True)
-	count  = query_db('''select count(book_id) from borrows where user_name = ? ''',
+	book = query_db('''select * from assets where asset_id = ?''', [id], one=True)
+	reader = query_db('''select * from borrows where asset_id = ?''', [id], one=True)
+	count  = query_db('''select count(asset_id) from borrows where user_name = ? ''',
 			  [g.user], one = True)
 
 	current_time = time.strftime('%Y-%m-%d',time.localtime(time.time()))
 	return_time = time.strftime('%Y-%m-%d',time.localtime(time.time() + 2600000))
 	if request.method == 'POST':
 		if reader:
-			error = 'The book has already borrowed.'
+			error = 'The item has already borrowed.'
 		else:
 			if count[0] == 3:
-				error = 'You can\'t borrow more than three books.'
+				error = 'You can\'t borrow more than three items.'
 			else:
 				db = get_db()
-				db.execute('''insert into borrows (user_name, book_id, date_borrow, \
+				db.execute('''insert into borrows (user_name, asset_id, date_borrow, \
 					date_return) values (?, ?, ?, ?) ''', [g.user, id,
 										   current_time, return_time])
-				db.execute('''insert into histroys (user_name, book_id, date_borrow, \
+				db.execute('''insert into histroys (user_name, asset_id, date_borrow, \
 					status) values (?, ?, ?, ?) ''', [g.user, id,
 										   current_time, 'not return'])
 				db.commit()
 				return redirect(url_for('reader_book', id = id))
-	   	return render_template('reader_book.html', book = book, reader = reader, error = error)
+	return render_template('reader_book.html', book = book, reader = reader, error = error)
 
 @app.route('/reader/histroy', methods=['GET', 'POST'])
 def reader_histroy():
 	reader_judge()
-	histroys = query_db('''select * from histroys, books where histroys.book_id = books.book_id and histroys.user_name=? ''', [g.user], one = False)
+	histroys = query_db('''select * from histroys, assets where histroys.asset_id = assets.asset_id and histroys.user_name=? ''', [g.user], one = False)
 
 	return render_template('reader_histroy.html', histroys = histroys)
 
 if __name__ == '__main__':
 	init_db()
-	app.run(debug=True)
+	app.run(debug=True, host='127.0.0.1', port=8080)
 
 
 

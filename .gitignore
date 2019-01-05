@@ -21,6 +21,11 @@ lib64
 # Installer logs
 pip-log.txt
 
+# venv
+venv
+
+*.db
+
 # Unit test / coverage reports
 .coverage
 .tox
@@ -30,6 +35,5 @@ nosetests.xml
 *.mo
 
 # Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
+.idea
+.vscode
